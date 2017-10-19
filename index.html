@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <div id="code"></div>
+    <script>
+      var uriCodeMatch = window.location.search.match(/code=(.*?)(?:&|$)/);
+      if(uriCodeMatch) {
+        var code = decodeURIComponent(uriCodeMatch[1]);
+        document.getElementById('code').innerText = code;
+      }
+    </script>
+  </body>
+</html>
