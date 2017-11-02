@@ -1,0 +1,34 @@
+{
+  "name": "ghub-cli",
+  "version": "1.0.0",
+  "description": "A command line tool for github with autocomplete",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dipunm/gh-cli.git"
+  },
+  "keywords": [
+    "github",
+    "cli",
+    "npm",
+    "node",
+    "autocomplete",
+    "completion"
+  ],
+  "author": "dipunm",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dipunm/gh-cli/issues"
+  },
+  "homepage": "https://github.com/dipunm/gh-cli#readme",
+  "dependencies": {
+    "bluebird": "^3.5.1",
+    "github": "^12.0.1",
+    "inquirer": "^3.3.0",
+    "require-all": "^2.2.0",
+    "yargs": "^10.0.3"
+  }
+}
