@@ -1,21 +1,12 @@
 #!/usr/bin/env node
 const commands = require('./commands');
+const fs = require('fs');
+const github = new require('github')({});
+
+const log = (...messages) => messages.forEach(m => fs.appendFileSync('log', typeof m === 'string' ? m + '\n' : JSON.stringify(m) + '\n', 'utf-8'));
 
 const yargs = require('yargs')
-  .usage('$0 <cmd> [args]')
-  .command('hello [name]', 'welcome ter yargs!', (yargs) => {
-      yargs.positional('name', {
-        type: 'string',
-        default: 'Cambi',
-        describe: 'the name to say hello to'
-      })
-    },
-    function (argv) {
-      console.log('hello', argv.name, 'welcome to yargs!')
-    })
-  .command('completion-script', 'prints the completion script that you can use to enable automatic completion', (yargs) => {}, (args) => {
-    yargs.showCompletionScript();
-    })
+  .completion()
   .command('login', '', (yargs) => {
       yargs
       .command('user <username>', 'Login to your github account and retrieve an access token.', (yargs) => {
@@ -40,6 +31,33 @@ const yargs = require('yargs')
           conflicts: ['browser', 'username']
         })
       })
+    })
+  .command(['find', 'search'], 'finds things like batman', (yargs) => {
+      yargs
+        // register completion handler
+        // then remove the complete command <~ hack ¯\_(ツ)_/¯ ~>
+        .completion('complete', function (a,b,c) {
+          commands.find_autocomplete(...arguments);
+        })
+        .command('complete', false)
+
+        .usage('$0 find <context> <repository>')
+        .positional('context', {
+          type: 'string'
+        })
+        .positional('repository', {
+          type: 'string'
+        })
+        .option('repositorasdy', {
+          type: 'string'
+        })
+
+        // TODO: Find out how yargs works out positional arguments and use to
+        // create a smart autocomplete helper.
+
+        log(yargs.getContext(), yargs.getUsageInstance(), yargs.getOptions());
+
+
     })
   .strict()
   .help()

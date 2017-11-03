@@ -1,1 +1,4 @@
-module.exports = Object.assign({}, require('./login'));
+module.exports = Object.assign({},
+  require('./login'),
+  require('./find')
+);
