@@ -2,6 +2,7 @@ const GitHubApi = require('github')
 const inquirer = require('inquirer');
 const fs = require('fs');
 const path = require('path');
+const opn = require('opn');
 
 const CONFIG_FILE = path.join(process.env.HOME, '/.ghub-cli');
 const github = new GitHubApi({
@@ -9,16 +10,6 @@ const github = new GitHubApi({
   Promise: require('bluebird')
 });
 const reqScopes = ['user', 'public_repo', 'repo', 'repo:status', 'gist'];
-
-
-// create token by user / pass
-// $cmd login username
-//
-// create token by browser
-// $cmd login --browser
-//
-// login by token authentication
-// $cmd login -t 938rhhgt93r09/rjgf9==
 
 function saveToConfig(token) {
   fs.openSync(CONFIG_FILE, 'a');
@@ -33,6 +24,24 @@ function saveToConfig(token) {
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(conf), { encoding: 'UTF-8' });
 }
 
+function completeVerifyAndSaveLogin(token) {
+  github.authenticate({
+    type: 'token',
+    token: token
+  });
+
+  getUsername((err, username) =>  {
+    if (err) {
+      console.error('unable to log in with the provided token.')
+      return;
+    }
+
+    saveToConfig(token);
+    console.log('successfully logged in as:', username)
+  });
+}
+
+
 function login(args) {
   if(args.username) {
     loginBasic(args.username, (err, token) => {
@@ -43,24 +52,16 @@ function login(args) {
         console.error(err.message);
         return;
       }
-      saveToConfig(token);
-      console.log('successfully logged in as:', args.username);
-    });
-  } else if (args.t) {
-    github.authenticate({
-      type: 'token',
-      token: args.t
-    });
 
-    getUsername((err, username) =>  {
-      if (err) {
-        console.error('unable to log in with the provided token.')
-        return;
-      }
-
-      saveToConfig(args.t);
-      console.log('successfully logged in as:', username)
+      completeVerifyAndSaveLogin(token);
     });
+  } else if (args.token) {
+    completeVerifyAndSaveLogin(args.token);
+  } else if (args._[1] === 'browser') {
+    opn('https://github.com/settings/tokens/new?scopes=' + encodeURIComponent(reqScopes.join(',')) + '&description=' + encodeURIComponent(makeTokenDescription()), {wait: false});
+    getTokenFromUser((err, token) => {
+      completeVerifyAndSaveLogin(token);
+    })
   }
 }
 
@@ -91,10 +92,14 @@ function loginBasic(username, done) {
 
     const payload = {
       scopes: reqScopes,
-      note: 'ghub-cli (node) (created: ' + new Date().toISOString() + ')',
+      note: makeTokenDescription(),
     };
     authorize(payload, done);
   });
+}
+
+function makeTokenDescription() {
+  return 'ghub-cli (node) (created: ' + new Date().toISOString() + ')'
 }
 
 function requiredTwoFactor(err) {
@@ -118,14 +123,14 @@ function authorize(payload, done) {
 }
 
 function attemptTwoFactorAuthentication(payload, done) {
-  getTwoFactorCode(code => {
+  getTwoFactorCodeFromUser((err, code) => {
     payload.headers = payload.headers || [];
     payload.headers['X-GitHub-OTP'] = code;
     authorize(payload, done);
   })
 }
 
-function getTwoFactorCode(done) {
+function getTwoFactorCodeFromUser(done) {
   inquirer.prompt(
     [
         {
@@ -134,7 +139,20 @@ function getTwoFactorCode(done) {
             name: 'otp'
         }
     ]).then(function (answers) {
-      done(answers.otp);
+      done(null, answers.otp);
+    });
+}
+
+function getTokenFromUser(done) {
+  inquirer.prompt(
+    [
+        {
+            type: 'input',
+            message: 'Enter your new token id',
+            name: 'token'
+        }
+    ]).then(function (answers) {
+      done(null, answers.token);
     });
 }
 
